@@ -3,6 +3,12 @@ __group__ = 'TO_BE_FILLED'
 
 import numpy as np
 import utils
+import random
+
+
+# Tamany de les imatges
+pictureHeight = 80
+pictureWidth = 60
 
 
 class KMeans:
@@ -19,9 +25,13 @@ class KMeans:
         self._init_X(X)
         self._init_options(options)  # DICT options
 
-    #############################################################
-    ##  THIS FUNCTION CAN BE MODIFIED FROM THIS POINT, if needed
-    #############################################################
+        #############################################################
+        ##  THIS FUNCTION CAN BE MODIFIED FROM THIS POINT, if needed
+        #############################################################
+        
+        self.centroids = list()
+        self.old_centroids = list()
+    
 
     def _init_X(self, X):
         """Initialization of all pixels, sets X as an array of data in vector form (PxD)
@@ -66,7 +76,43 @@ class KMeans:
         """
         Initialization of centroids
         """
-
+        
+        # Es guarden els centroides com llistes de 2 elements (coordenada Y i X respectivament) des del punt superior esquerra de l'imatge
+        
+        if self.options["km_init"] == "first":
+            i, j = 0, 0
+            while len(self.centroids) < self.K:
+                newCentroid = [i, j]
+                self.centroids.append(newCentroid)
+                i += 1
+                if i == pictureHeight:
+                    i = 0
+                    j += 1
+        
+        elif self.options["km_init"] == "random":
+            while len(self.centroids) < self.K:
+                newCentroid = [random.randint(0, pictureHeight - 1), random.randint(0, pictureWidth - 1)]
+                if newCentroid not in self.centroids:
+                    self.centroids.append(newCentroid)
+        
+        # Per custom, tria K punts aleatoris tal que estiguin a una distancia minima entre ells (cutoffDist)
+        elif self.options["km_init"] == "custom":
+            cutoffDist = np.sqrt(np.square(pictureWidth) + np.square(pictureHeight)) / self.K
+            while len(self.centroids) < self.K:
+                newCentroid = [random.randint(0, pictureHeight - 1), random.randint(0, pictureWidth - 1)]
+                minDist = np.inf
+                for centroid in self.centroids:
+                    dist = np.sqrt(np.square(centroid[0] - newCentroid[0]) + np.square(centroid[1] - newCentroid[1]))
+                    if dist < minDist:
+                        minDist = dist
+                if minDist > cutoffDist:
+                    self.centroids.append(newCentroid)
+        
+            
+        
+        """
+        # Codi original
+        
         #######################################################
         ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
         ##  AND CHANGE FOR YOUR OWN CODE
@@ -77,6 +123,7 @@ class KMeans:
         else:
             self.centroids = np.random.rand(self.K, self.X.shape[1])
             self.old_centroids = np.random.rand(self.K, self.X.shape[1])
+        """
 
     def get_labels(self):
         """
