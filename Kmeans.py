@@ -1,5 +1,5 @@
-__authors__ = 'TO_BE_FILLED'
-__group__ = 'TO_BE_FILLED'
+__authors__ = '[1672633, 1673893, 1673377]'
+__group__ = '33'
 
 import numpy as np
 import utils
@@ -18,6 +18,8 @@ class KMeans:
         self.K = K
         self._init_X(X)
         self._init_options(options)  # DICT options
+        self.labels = None
+        self.old_centroids = None
 
     #############################################################
     ##  THIS FUNCTION CAN BE MODIFIED FROM THIS POINT, if needed
@@ -34,7 +36,14 @@ class KMeans:
         ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
         ##  AND CHANGE FOR YOUR OWN CODE
         #######################################################
-        self.X = np.random.rand(100, 5)
+        
+        X = np.asarray(X, dtype=np.float64) 
+        if X.ndim == 3 and X.shape[2] == 3:
+            F,C, _ = X.shape
+            X = X.reshape(F*C,3)
+        elif X.ndim != 2:
+            print("Error")
+        self.X = X
 
     def _init_options(self, options=None):
         """
@@ -66,17 +75,25 @@ class KMeans:
         """
         Initialization of centroids
         """
-
         #######################################################
         ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
         ##  AND CHANGE FOR YOUR OWN CODE
         #######################################################
+        N, D = self.X.shape
+        self.centroids = np.zeros((self.K, D))
+
         if self.options['km_init'].lower() == 'first':
-            self.centroids = np.random.rand(self.K, self.X.shape[1])
-            self.old_centroids = np.random.rand(self.K, self.X.shape[1])
-        else:
-            self.centroids = np.random.rand(self.K, self.X.shape[1])
-            self.old_centroids = np.random.rand(self.K, self.X.shape[1])
+            _, indicesU = np.unique(self.X, axis=0, return_index=True)
+            puntosU = self.X[np.sort(indicesU)]
+            self.centroids = puntosU[:self.K]
+
+        elif self.options['km_init'].lower() == 'random':
+            indices = np.random.choice(N, self.K, replace=False)
+            self.centroids = self.X[indices]
+
+        elif self.options['km_init'].lower() == 'custom':
+            pass
+            
 
     def get_labels(self):
         """
@@ -86,8 +103,9 @@ class KMeans:
         ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
         ##  AND CHANGE FOR YOUR OWN CODE
         #######################################################
-        self.labels = np.random.randint(self.K, size=self.X.shape[0])
-
+        dist = distance(self.X, self.centroids)
+        self.labels = np.argmin(dist, axis=1)
+        
     def get_centroids(self):
         """
         Calculates coordinates of centroids based on the coordinates of all the points assigned to the centroid
@@ -96,7 +114,19 @@ class KMeans:
         ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
         ##  AND CHANGE FOR YOUR OWN CODE
         #######################################################
-        pass
+        self.old_centroids = np.copy(self.centroids)
+        
+        centroidsN = np.zeros_like(self.centroids)
+        
+        for k in range(self.K):
+            puntosCentroid = self.X[self.labels == k]
+        
+            if len(puntosCentroid) > 0:
+                centroidsN[k] = np.mean(puntosCentroid, axis=0)
+            else:
+                centroidsN[k] = self.centroids[k]
+                
+        self.centroids = centroidsN
 
     def converges(self):
         """
@@ -106,7 +136,11 @@ class KMeans:
         ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
         ##  AND CHANGE FOR YOUR OWN CODE
         #######################################################
-        return True
+
+        if np.linalg.norm(self.centroids - self.old_centroids) > self.options['tolerance']:
+            return False
+
+        return True 
 
     def fit(self):
         """
@@ -117,7 +151,18 @@ class KMeans:
         ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
         ##  AND CHANGE FOR YOUR OWN CODE
         #######################################################
-        pass
+        P, D = self.X.shape
+
+        self._init_centroids()
+        iteraciones = 0 
+
+        while iteraciones < self.options['max_iter']:
+            self.get_labels()
+            self.get_centroids()
+            iteraciones += 1
+
+            if self.converges():
+                break
 
     def withinClassDistance(self):
         """
@@ -157,7 +202,17 @@ def distance(X, C):
     ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
     ##  AND CHANGE FOR YOUR OWN CODE
     #########################################################
-    return np.random.rand(X.shape[0], C.shape[0])
+    P = X.shape[0]
+    K = C.shape[0] 
+
+    dist = np.zeros((P, K))
+
+    for i in range(P):
+        for j in range(K):
+            diff = X[i] - C[j] 
+            dist[i, j] = np.sqrt(np.sum(diff ** 2))
+
+    return dist
 
 
 def get_colors(centroids):
