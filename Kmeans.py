@@ -256,4 +256,8 @@ def get_colors(centroids):
     ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
     ##  AND CHANGE FOR YOUR OWN CODE
     #########################################################
-    return list(utils.colors)
+    probabilidadC = utils.get_color_prob(centroids)
+    colores = utils.colors
+    color_indices = np.argmax(probabilidadC, axis=1)
+
+    return [colores[i] for i in color_indices]
