@@ -200,17 +200,22 @@ class KMeans:
         
         self.K = 1
         self.fit()
-        anteriorWCD = self.withinClassDistance()
+        self.withinClassDistance()
+        anteriorWCD = self.WCD
         self.K += 1
         
         millorKTrobada = False
         
         while not millorKTrobada:
+            print("Provant per K=" + str(self.K))
             self.fit()
-            actualWCD = self.withinClassDistance()
-            millorKTrobada = ((actualWCD / anteriorWCD) < 0.2)
+            self.withinClassDistance()
+            millorKTrobada = ((1 - (self.WCD / anteriorWCD)) < 0.2) or (self.K == max_K)
             if not millorKTrobada:
                 self.K += 1
+                anteriorWCD = self.WCD
+                
+        self.K -= 1
         
 
 def distance(X, C):
