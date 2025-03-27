@@ -197,7 +197,21 @@ class KMeans:
         ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
         ##  AND CHANGE FOR YOUR OWN CODE
         #######################################################
-        pass
+        
+        self.K = 1
+        self.fit()
+        anteriorWCD = self.withinClassDistance()
+        self.K += 1
+        
+        millorKTrobada = False
+        
+        while not millorKTrobada:
+            self.fit()
+            actualWCD = self.withinClassDistance()
+            millorKTrobada = ((actualWCD / anteriorWCD) < 0.2)
+            if not millorKTrobada:
+                self.K += 1
+        
 
 def distance(X, C):
     """
