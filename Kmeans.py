@@ -20,6 +20,8 @@ class KMeans:
         self._init_options(options)  # DICT options
         self.labels = None
         self.old_centroids = None
+        self.WCD = 1
+        self.best_K= None
 
     #############################################################
     ##  THIS FUNCTION CAN BE MODIFIED FROM THIS POINT, if needed
@@ -173,7 +175,19 @@ class KMeans:
         ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
         ##  AND CHANGE FOR YOUR OWN CODE
         #######################################################
-        pass
+        N = self.X.shape[0]
+        total_distance = 0
+
+        for i in range(N):
+            x = self.X[i]
+            cluster_idx = self.labels[i]
+            Cx = self.centroids[cluster_idx]
+
+            distancia_cuadrada = np.sum((x - Cx) ** 2)
+
+            total_distance += distancia_cuadrada
+
+        self.WCD = total_distance / N
 
     def find_bestK(self, max_K):
         """
@@ -184,7 +198,6 @@ class KMeans:
         ##  AND CHANGE FOR YOUR OWN CODE
         #######################################################
         pass
-
 
 def distance(X, C):
     """

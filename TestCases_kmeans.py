@@ -67,7 +67,7 @@ class TestCases(unittest.TestCase):
             old_centroid, centroid, bool_value = self.test_cases['converge'][ix]
             km.old_centroids, km.centroids = old_centroid, centroid
             self.assertEqual(km.converges(), bool_value)
-    """
+    
     def test_08_Kmeans(self):
         for ix, input in enumerate(self.test_cases['input']):
             km = KMeans(input, self.test_cases['K'][ix])
@@ -79,7 +79,7 @@ class TestCases(unittest.TestCase):
             km = KMeans(input, self.test_cases['K'][ix])
             km.find_bestK(10)
             self.assertEqual(km.K, self.test_cases['bestK'][ix])
-
+    """
     def test_10_get_color(self):
         for ix, centroid in enumerate(self.test_cases['kmeans']):
             color = get_colors(centroid)
