@@ -25,7 +25,8 @@ class KNN:
         ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
         ##  AND CHANGE FOR YOUR OWN CODE
         #######################################################
-        self.train_data = np.random.randint(8, size=[10, 4800])
+        train_data = train_data.astype(float)
+        self.train_data = train_data.reshape((train_data.shape[0], -1))
 
     def get_k_neighbours(self, test_data, k):
         """
@@ -39,7 +40,10 @@ class KNN:
         ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
         ##  AND CHANGE FOR YOUR OWN CODE
         #######################################################
-        self.neighbors = np.random.randint(k, size=[test_data.shape[0], k])
+        test_data = test_data.reshape((test_data.shape[0], -1))
+        d = cdist(test_data, self.train_data)
+        idx = np.argsort(d, axis=1)[:, :k]
+        self.neighbors = self.labels[idx]
 
     def get_class(self):
         """
@@ -51,7 +55,23 @@ class KNN:
         ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
         ##  AND CHANGE FOR YOUR OWN CODE
         #######################################################
-        return np.random.randint(10, size=self.neighbors.size), np.random.random(self.neighbors.size)
+        test_class = []
+
+        for neighbors in self.neighbors:
+            values, cantidad = np.unique(neighbors, return_counts=True)
+
+            max_cantidad = np.max(cantidad)
+            candidatos = values[cantidad == max_cantidad]
+
+            if len(candidatos) > 1:
+                for label in neighbors:
+                    if label in candidatos:
+                        test_class.append(label)
+                        break
+            else:
+                test_class.append(candidatos[0])
+
+        return np.array(test_class)
 
     def predict(self, test_data, k):
         """
