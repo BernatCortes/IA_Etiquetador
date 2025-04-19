@@ -156,12 +156,12 @@ class KMeans:
         P, D = self.X.shape
 
         self._init_centroids()
-        iteraciones = 0 
+        self.iteraciones = 0 
 
-        while iteraciones < self.options['max_iter']:
+        while self.iteraciones < self.options['max_iter']:
             self.get_labels()
             self.get_centroids()
-            iteraciones += 1
+            self.iteraciones += 1
 
             if self.converges():
                 break
@@ -188,6 +188,22 @@ class KMeans:
             total_distance += distancia_cuadrada
 
         self.WCD = total_distance / N
+        
+    def interClassDistance(self):
+        distanceSum = 0
+        for c1 in self.centroids:
+            for c2 in self.centroids:
+                distanceSquared = 0
+                for d1, d2 in zip(c1, c2):
+                    distanceSquared += np.square(d1 - d2)
+                distanceSum += np.sqrt(distanceSquared)
+        self.ICD = distanceSum / (np.square(len(self.centroids)) - len(self.centroids))
+        
+    def fisherDiscriminant(self):
+        self.withinClassDistance()
+        self.interClassDistance()
+        self.fisher = self.WCD / self.ICD
+                
 
     def find_bestK(self, max_K):
         """
@@ -207,7 +223,6 @@ class KMeans:
         millorKTrobada = False
         
         while not millorKTrobada:
-            print("Provant per K=" + str(self.K))
             self.fit()
             self.withinClassDistance()
             millorKTrobada = ((1 - (self.WCD / anteriorWCD)) < 0.2) or (self.K == max_K)
