@@ -5,6 +5,7 @@ import numpy as np
 import math
 import operator
 from scipy.spatial.distance import cdist
+from utils import MinkowskiArrays
 
 
 class KNN:
@@ -28,7 +29,7 @@ class KNN:
         train_data = train_data.astype(float)
         self.train_data = train_data.reshape((train_data.shape[0], -1))
 
-    def get_k_neighbours(self, test_data, k):
+    def get_k_neighbours(self, test_data, k, q = 2):
         """
         given a test_data matrix calculates de k nearest neighbours at each point (row) of test_data on self.neighbors
         :param test_data: array that has to be shaped to a NxD matrix (N points in a D dimensional space)
@@ -41,9 +42,18 @@ class KNN:
         ##  AND CHANGE FOR YOUR OWN CODE
         #######################################################
         test_data = test_data.reshape((test_data.shape[0], -1))
-        d = cdist(test_data, self.train_data)
+        d = self.get_neighbour_distances(test_data, q)
         idx = np.argsort(d, axis=1)[:, :k]
         self.neighbors = self.labels[idx]
+        
+    def get_neighbour_distances(self, test_data, q = 2):
+        if q == 2:
+            return cdist(test_data, self.train_data)
+        elif q == 1:
+            return cdist(test_data, self.train_data, 'cityblock')
+        else:
+            return cdist(test_data, self.train_data, 'minkowski', p=q)
+        
 
     def get_class(self):
         """

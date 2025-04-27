@@ -94,7 +94,14 @@ class KMeans:
             self.centroids = self.X[indices]
 
         elif self.options['km_init'].lower() == 'custom':
-            pass
+            minDistance = ((255 ** (3 / 2)) / self.K) * 5
+            while len(self.centroids) < self.K:
+                newCentroid = np.ndarray([np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255)])
+                minDist = 255 ** (3 / 2)
+                for centroid in self.centroids:
+                    mindist = min(minDist, np.linalg.norm(newCentroid - centroid))
+                if minDist < minDistance:
+                    self.centroids.append(newCentroid)
             
 
     def get_labels(self):
@@ -138,6 +145,8 @@ class KMeans:
         ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
         ##  AND CHANGE FOR YOUR OWN CODE
         #######################################################
+
+        # print(np.linalg.norm(self.centroids - self.old_centroids))
 
         if np.linalg.norm(self.centroids - self.old_centroids) > self.options['tolerance']:
             return False
@@ -231,6 +240,7 @@ class KMeans:
                 anteriorWCD = self.WCD
                 
         self.K -= 1
+        self.best_K = self.K
         
 
 def distance(X, C):

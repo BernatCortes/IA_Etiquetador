@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.spatial.distance import minkowski
 
 
 def rgb2gray(rgb):

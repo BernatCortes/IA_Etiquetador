@@ -15,6 +15,10 @@ from KNN import *
 import time
 import matplotlib.pyplot as plt
 
+from collections import Counter
+
+from CollectedData import *
+
 if __name__ == '__main__':
 
     # Load all the images and GT
@@ -93,7 +97,9 @@ if __name__ == '__main__':
     def Get_shape_accuracy(shapeLabels, groundTruth):
         correctCalculations = 0
         for calculatedLabel, correctLabel in zip(shapeLabels, groundTruth):
-            if calculatedLabel == correctLabel:
+            # print(calculatedLabel)
+            lst = calculatedLabel.tolist()
+            if max(set(lst), key=lst.count) == correctLabel:
                 correctCalculations += 1
         return correctCalculations / len(shapeLabels)
     
@@ -112,3 +118,70 @@ if __name__ == '__main__':
         return correctCalculations
            
     
+    def getBestKData(imageList):
+        maxN = min(1000, len(imageList))
+        print("Number of images: " + str(maxN))
+        bestKList = list()
+        for i in range(maxN):
+            print("Checking image " + str(i))
+            km = KMeans(imageList[i], 1, {"tolerance" : 5})
+            km.find_bestK(12)
+            bestKList.append(km.best_K)
+        with open("results.txt", "a") as f:
+            f.write(str(bestKList))
+    
+    def getBestMinkowskyQ(trainImgsList, trainClassLabels, testImgsList, testClassLabels):
+        knn = KNN(trainImgsListmgs, train_ClassLabels)
+        test_imgs_sample = np.random.choice(testImgsList)
+        xData = []
+        yData = []
+        for q in range(1, 11):
+            print("Trying q=" + str(q / 2))
+            knn.get_k_neighbours(testImgsList, 5, q / 2)
+            xData.append(q / 2)
+            yData.append(Get_shape_accuracy(knn.neighbors, testClassLabels))
+            print(str(q / 2) + " " + str(yData[-1]))
+        plotBars("Accuracy of KNN", xData, yData, "q", "Accuracy")
+        
+    def testBestKAccuracy(trainImgsList, trainColourLabels):
+        maxK = 9
+        labels = {}
+        for K in range(2, maxK + 1):
+            labels[K] = []
+        for i in range(len(trainImgsList)):
+            img = trainImgsList[i]
+            print("Testing image " + str(i))
+            for K in range(2, maxK + 1):
+                km = KMeans(img, K, {"tolerance" : K * 2})
+                km.fit()
+                labels[K].append(get_colors(km.centroids))
+        accuracy = {}
+        for K in labels.keys():
+            accuracy[K] = get_color_accuracy(labels[K], trainColourLabels)
+        return accuracy
+    
+    def testBestQforKNN(trainImgsList, trainClassLabels, testImgsList, testClassLabels):
+        knn = KNN(trainImgsList, trainClassLabels)
+        results = {}
+        for q in range(1, 11):
+            qReal = q / 2
+            print("Trying q=" + str(qReal))
+            knn.get_k_neighbours(testImgsList, 5, qReal)
+            results[qReal] = Get_shape_accuracy(knn.neighbors, testClassLabels)
+            print(str(qReal) + " " + str(results[qReal]))
+        return results
+    
+    def testBestKforKNN(trainImgsList, trainClassLabels, testImgsList, testClassLabels):
+        knn = KNN(trainImgsList, trainClassLabels)
+        results = {}
+        for K in range(1, 51):
+            print("Trying K=" + str(K))
+            knn.get_k_neighbours(testImgsList, K)
+            results[K] = Get_shape_accuracy(knn.neighbors, testClassLabels)
+            print(str(K) + " " + str(results[K]))
+        return results
+    
+    percentages = {}
+    for K in accuracyKMeans_K.keys():
+        percentages[K] = accuracyKMeans_K[K] / 1000
+    print(percentages)
