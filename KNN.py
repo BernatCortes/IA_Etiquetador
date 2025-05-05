@@ -5,7 +5,6 @@ import numpy as np
 import math
 import operator
 from scipy.spatial.distance import cdist
-from utils import MinkowskiArrays
 
 
 class KNN:
@@ -45,6 +44,7 @@ class KNN:
         d = self.get_neighbour_distances(test_data, q)
         idx = np.argsort(d, axis=1)[:, :k]
         self.neighbors = self.labels[idx]
+        # return d
         
     def get_neighbour_distances(self, test_data, q = 2):
         if q == 2:

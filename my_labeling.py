@@ -1,19 +1,14 @@
 __authors__ = 'TO_BE_FILLED'
 __group__ = 'TO_BE_FILLED'
 
-"""
-Average best K:     5.033333333333333
-Standard deviation: 1.2367736003600198
-Minimum:            2
-Maximum:            9
-"""
-
 from utils_data import read_dataset, read_extended_dataset, crop_images
+from utils import get_color_prob, colors
 from Kmeans import *
 from KNN import *
 
 import time
 import matplotlib.pyplot as plt
+import json
 
 from collections import Counter
 
@@ -115,7 +110,7 @@ if __name__ == '__main__':
                     incorrectColours += 1
             totalColoursCombined = len(set(calculatedLabel + correctLabel))
             correctCalculations += (totalColoursCombined - incorrectColours) / totalColoursCombined
-        return correctCalculations
+        return correctCalculations / len(colourLabels)
            
     
     def getBestKData(imageList):
@@ -174,14 +169,96 @@ if __name__ == '__main__':
     def testBestKforKNN(trainImgsList, trainClassLabels, testImgsList, testClassLabels):
         knn = KNN(trainImgsList, trainClassLabels)
         results = {}
-        for K in range(1, 51):
+        for K in range(1, 11):
             print("Trying K=" + str(K))
-            knn.get_k_neighbours(testImgsList, K)
+            knn.get_k_neighbours(testImgsList, K, 1.4)
             results[K] = Get_shape_accuracy(knn.neighbors, testClassLabels)
             print(str(K) + " " + str(results[K]))
         return results
     
-    percentages = {}
-    for K in accuracyKMeans_K.keys():
-        percentages[K] = accuracyKMeans_K[K] / 1000
-    print(percentages)
+    def getColourCentroids():
+        arrIn = np.array([[0, 0, 0]])
+        matOut = []
+        for i in range(256):
+            for j in range(256):
+                print(str(i) + ", " + str(j))
+                for k in range(0, 256, 8):
+                    colourProbs = get_color_prob(np.array([[i, j, k], [i, j, k + 1], [i, j, k + 2], [i, j, k + 3], [i, j, k + 4], [i, j, k + 5], [i, j, k + 6], [i, j, k + 7]])).tolist()
+                    for n in range(8):
+                        matOut.append(colourProbs[n])
+            print("Writing to file...")
+            with open("colourProbs/return" + str(i) + ".txt", "a") as f:
+                f.write(str(matOut) + "\n")
+            matOut = []
+        
+        nColours = len(colors)
+        probsList = []
+        for i in range(256):
+            outList = list([] for _ in range(nColours))
+            print(i)
+            with open("colourProbs/return" + str(i) + ".txt") as f:
+                probsList = json.loads(f.read())
+            for j in range(256):
+                for k in range(256):
+                    valid = -1
+                    for l in range(len(probsList[j * 255 + k])):
+                        if probsList[j * 255 + k][l] > 0.99:
+                            valid = int(l)
+                    if valid >= 0:
+                        outList[valid].append([i, j, k])
+            with open("colourProbs/validCoords" + str(i) + ".txt", "a") as f:
+                f.write(str(outList) + "\n")
+        
+        nColours = len(colors)
+        coordsList = list([] for _ in range(nColours))
+        for i in range(256):
+            print(i)
+            with open("colourProbs/validCoords" + str(i) + ".txt") as f:
+                newList = json.loads(f.read())
+                for allCoords, newCoords in zip(coordsList, newList):
+                    allCoords.extend(newCoords)
+        avgCoords = []
+        for coords in coordsList:
+            totalSum = [0, 0, 0]
+            for coord in coords:
+                for i in range(len(coord)):
+                    totalSum[i] += coord[i]
+            for i in range(len(coord)):
+                totalSum[i] /= len(coords)
+            avgCoords.append(totalSum)
+    
+        print(avgCoords)
+    
+    """
+    results = {}
+    initOptions = ["custom"]
+    for option in initOptions:
+        results[option] = []
+    for option in initOptions:
+        print(option)
+        i = 0
+        for image in train_imgs[:100]:
+            print(i)
+            km = KMeans(image, 5, {"km_init" : "custom", "custom_option" : "center"})
+            km.fit()
+            results[option].append(get_colors(km.centroids))
+            i += 1
+            
+    for option in results.keys():
+        print(option + str(get_color_accuracy(results[option], train_color_labels[:100])))
+    """
+    
+    def bestKAccuracy(testImgs, groundTruth):
+        dev = 0
+        i = 0
+        n = 50
+        for img, truth in zip(testImgs, groundTruth):
+            km = KMeans(img, options = {"km_init" : "custom", "custom_option" : "fixed_centroids"})
+            km.find_bestK(10, 0.392)
+            print(str(i) + " " + str(len(truth)) + "  " + str(km.K))
+            dev += len(truth) - km.K
+            i += 1
+        print(dev / n)
+        
+    bestKAccuracy(train_imgs[:50], train_color_labels[:50])
+            

@@ -3,7 +3,9 @@ __group__ = '33'
 
 import numpy as np
 import utils
+from random import sample
 
+from CollectedData import colourCentroids
 
 class KMeans:
 
@@ -92,16 +94,38 @@ class KMeans:
         elif self.options['km_init'].lower() == 'random':
             indices = np.random.choice(N, self.K, replace=False)
             self.centroids = self.X[indices]
-
+        
         elif self.options['km_init'].lower() == 'custom':
-            minDistance = ((255 ** (3 / 2)) / self.K) * 5
-            while len(self.centroids) < self.K:
-                newCentroid = np.ndarray([np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255)])
-                minDist = 255 ** (3 / 2)
-                for centroid in self.centroids:
-                    mindist = min(minDist, np.linalg.norm(newCentroid - centroid))
-                if minDist < minDistance:
-                    self.centroids.append(newCentroid)
+            if self.options['custom_option'].lower() == "random_distance":
+                minDistance = ((255 ** (3 / 2)) / self.K) * int(self.options['random_distance_d'].lower())
+                while len(self.centroids) < self.K:
+                    newCentroid = np.ndarray([np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255)])
+                    minDist = 255 ** (3 / 2)
+                    for centroid in self.centroids:
+                        minDist = min(minDist, np.linalg.norm(newCentroid - centroid))
+                    if minDist < minDistance:
+                        self.centroids.append(newCentroid)
+            
+            elif self.options['custom_option'].lower() == "fixed_centroids":
+                self.centroids = np.array(sample(colourCentroids, self.K))
+                
+            elif self.options['custom_option'].lower() == "const_X_dist":
+                if self.K == 1:
+                    self.centroids = np.array(self.X[np.floor(len(self.X) / 2)])
+                else:
+                    self.centroids = []
+                    dist = len(self.X) / (self.K - 1)
+                    for i in range(self.K - 1):
+                        self.centroids.append(self.X[np.floor(i * dist)])
+                    self.centroids.append(self.X[-1])
+                    self.centroids = np.array(self.centroids)
+                    
+            elif self.options['custom_option'].lower() == "center":
+                center = int(np.floor((len(self.X) - self.K) / 2))
+                self.centroids = []
+                for i in range(center, center + int(self.K)):
+                    self.centroids.append(self.X[i])
+                self.centroids = np.array(self.centroids)
             
 
     def get_labels(self):
@@ -123,6 +147,7 @@ class KMeans:
         ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
         ##  AND CHANGE FOR YOUR OWN CODE
         #######################################################
+        
         self.old_centroids = np.copy(self.centroids)
         
         centroidsN = np.zeros_like(self.centroids)
@@ -136,6 +161,31 @@ class KMeans:
                 centroidsN[k] = self.centroids[k]
                 
         self.centroids = centroidsN
+        """
+        
+        # Save the old centroids before updating them
+        self.old_centroids = np.copy(self.centroids)
+
+        # Initialize an array to hold the new centroids
+        centroidsN = np.zeros_like(self.centroids)
+    
+        # Use np.add.at to accumulate the sum of points assigned to each centroid
+        np.add.at(centroidsN, self.labels, self.X)
+    
+        # Count how many points are assigned to each centroid (avoid division by zero)
+        counts = np.bincount(self.labels, minlength=self.K)
+    
+        # Divide the sum of points by the number of points for each centroid
+        # where the count is greater than zero (to avoid division by zero)
+        for k in range(self.K):
+            if counts[k] > 0:
+                centroidsN[k] /= counts[k]
+            else:
+                centroidsN[k] = self.centroids[k]  # Keep the old centroid if no points are assigned
+    
+        # Update the centroids
+        self.centroids = centroidsN
+        """
 
     def converges(self):
         """
@@ -214,7 +264,7 @@ class KMeans:
         self.fisher = self.WCD / self.ICD
                 
 
-    def find_bestK(self, max_K):
+    def find_bestK(self, max_K, tolerance = 0.2):
         """
          sets the best k analysing the results up to 'max_K' clusters
         """
@@ -234,7 +284,7 @@ class KMeans:
         while not millorKTrobada:
             self.fit()
             self.withinClassDistance()
-            millorKTrobada = ((1 - (self.WCD / anteriorWCD)) < 0.2) or (self.K == max_K)
+            millorKTrobada = ((1 - (self.WCD / anteriorWCD)) < tolerance) or (self.K == max_K)
             if not millorKTrobada:
                 self.K += 1
                 anteriorWCD = self.WCD
