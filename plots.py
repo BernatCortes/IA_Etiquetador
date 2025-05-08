@@ -57,10 +57,16 @@ def plotFitToleranceAccuracyExecTime(toleranceList, accuracyLists, execTimeLists
     xTitle = "Tolerància a fit()"
     plotAccuracyExecTime(title, toleranceList, xTitle, accuracyLists, execTimeLists, None)
     
+def plotBestKToleranceAccuracyExecTime(toleranceList, accuracyLists, execTimeLists, optionsList):
+    title = "Exactitud de find_bestK"
+    xTitle = "Tolerància a find_bestK"
+    plotAccuracyExecTime(title, toleranceList, xTitle, accuracyLists, execTimeLists, optionsList)
+    
 
 def generateTestPlots():
     plotBestKAccuracyExecTime([1, 2, 3, 4], [[0.8, 0.9, 0.95, 0.85], [0.83, 0.87, 0.92, 0.90]], [[1.05, 2.07, 4.21, 8.54], [1.23, 2.32, 3.47, 5.01]], ["first", "random"])
     plotFitToleranceAccuracyExecTime([0, 1, 2, 3], [[0.95, 0.95, 0.93, 0.92]], [[2.32, 2.02, 1.69, 1.23]])
+    plotBestKToleranceAccuracyExecTime([0.2, 0.25, 0.3, 0.4], [[0.7, 0.85, 0.90, 0.80], [0.83, 0.87, 0.92, 0.90], [0.75, 0.90, 0.84, 0.81]], [[5.01, 3.47, 2.32, 1.23], [8.54, 4.21, 2.07, 1.05], [7.39, 5.03, 2.81, 1.50]], ["first", "random", "custom"])
 
 
 if __name__ == '__main__':
