@@ -1,7 +1,7 @@
 __authors__ = 'TO_BE_FILLED'
 __group__ = 'TO_BE_FILLED'
 
-from utils_data import read_dataset, read_extended_dataset, crop_images
+from utils_data import read_dataset, read_extended_dataset, crop_images, Plot3DCloud
 from utils import get_color_prob, colors
 from Kmeans import *
 from KNN import *
@@ -9,6 +9,8 @@ from KNN import *
 import time
 import matplotlib.pyplot as plt
 import json
+
+import numpy as np
 
 from collections import Counter
 
@@ -229,36 +231,119 @@ if __name__ == '__main__':
     
         print(avgCoords)
     
-    """
-    results = {}
-    initOptions = ["custom"]
-    for option in initOptions:
-        results[option] = []
-    for option in initOptions:
-        print(option)
-        i = 0
-        for image in train_imgs[:100]:
-            print(i)
-            km = KMeans(image, 5, {"km_init" : "custom", "custom_option" : "center"})
-            km.fit()
-            results[option].append(get_colors(km.centroids))
-            i += 1
-            
-    for option in results.keys():
-        print(option + str(get_color_accuracy(results[option], train_color_labels[:100])))
-    """
+    def testOptions(imgs, groundTruth, optionsList, k = 5):
+        results = []
+        for option in optionsList:
+            results.append([option])
+            print(option)
+            i = 0
+            imgResults = []
+            for i in range(len(imgs)):
+                print(i)
+                km = KMeans(image[i], k, option)
+                km.fit()
+                imgResults.append(get_colors(km.centroids))
+            results[-1].append(get_color_accuracy(imgResults, groundTruth))
+        return results
     
-    def bestKAccuracy(testImgs, groundTruth):
-        dev = 0
-        i = 0
-        n = 50
-        for img, truth in zip(testImgs, groundTruth):
-            km = KMeans(img, options = {"km_init" : "custom", "custom_option" : "fixed_centroids"})
-            km.find_bestK(10, 0.392)
-            print(str(i) + " " + str(len(truth)) + "  " + str(km.K))
-            dev += len(truth) - km.K
-            i += 1
-        print(dev / n)
-        
-    bestKAccuracy(train_imgs[:50], train_color_labels[:50])
+    
+    def getDataGraph1(testImgs, groundTruth):
+        options = [
+            {"km_init" : "first"},
+            {"km_init" : "random"},
+            {"km_init" : "custom", "custom_option" : "random_distance", "random_distance_d" : "1"},
+            {"km_init" : "custom", "custom_option" : "random_distance", "random_distance_d" : "5"},
+            {"km_init" : "custom", "custom_option" : "random_distance", "random_distance_d" : "8"},
+            {"km_init" : "custom", "custom_option" : "random_distance", "random_distance_d" : "12"},
+            {"km_init" : "custom", "custom_option" : "fixed_centroids"},
+            {"km_init" : "custom", "custom_option" : "const_X_dist"},
+            {"km_init" : "custom", "custom_option" : "center"}
+        ]
+        fileNamesByOption = [
+            "first",
+            "random",
+            "random_distance_1",
+            "random_distance_5",
+            "random_distance_8",
+            "random_distance_12",
+            "fixed_colour_centroids",
+            "const_X_dist",
+            "center"
+        ]
+        max_K = 9
+        for option, fileName in zip(options, fileNamesByOption):
+            for K in range(1, max_K + 1):
+                print("Doing " + fileName + " for K = " + str(K))
+                accuracy = 0
+                execTime = 0
+                calculatedColours = []
+                for i in range(len(testImgs)):
+                    print(i)
+                    km = KMeans(testImgs[i], K, option)
+                    startTime = time.time()
+                    km.fit()
+                    endTime = time.time()
+                    calculatedColours.append(get_colors(km.centroids))
+                    execTime += endTime - startTime
+                accuracy = get_color_accuracy(calculatedColours, groundTruth)
+                execTime /= len(testImgs)
+                
+                realFileName = "graph1_" + fileName + "_K" + str(K) + ".txt"
+                with open(realFileName, "a") as f:
+                    f.write(str(calculatedColours) + "\n" + str(execTime))
+                    
+    def getDataGraph2(testImgs, groundTruth):
+        options = [
+            {"km_init" : "first"},
+            {"km_init" : "random"},
+            {"km_init" : "custom", "custom_option" : "fixed_centroids"},
+            {"km_init" : "custom", "custom_option" : "center"}
+        ]
+        fileNamesByOption = [
+            "first",
+            "random",
+            "fixed_colour_centroids",
+            "center"
+        ]
+        max_K = 9
+        for option, fileName in zip(options, fileNamesByOption):
+            for tolerance in range(0, 7):
+                print("Doing " + fileName + " for tol = " + str(tolerance))
+                accuracy = 0
+                execTime = 0
+                option["tolerance"] = tolerance
+                calculatedColours = []
+                for i in range(len(testImgs)):
+                    print(i)
+                    km = KMeans(testImgs[i], 5, option)
+                    startTime = time.time()
+                    km.fit()
+                    endTime = time.time()
+                    calculatedColours.append(get_colors(km.centroids))
+                    execTime += endTime - startTime
+                accuracy = get_color_accuracy(calculatedColours, groundTruth)
+                execTime /= len(testImgs)
+                
+                realFileName = "graph2_" + fileName + "_tol" + str(tolerance) + ".txt"
+                with open(realFileName, "a") as f:
+                    f.write(str(calculatedColours) + "\n" + str(execTime))
+                    
+    def getDataGraph4(trainImgs, trainLabels, testImgs, groundTruth):
+        qRange = [0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2, 2.5, 3, 3.5, 4, 4.5, 5]
+        for qCurrent in qRange:
+            print("Calculating for q = " + str(qCurrent))
+            knn = KNN(trainImgs, trainLabels)
+            startTime = time.time()
+            neighboursList = knn.get_k_neighbours(testImgs, q = qCurrent, returnFullNeighbourList = True)
+            execTime = (time.time() - startTime) / len(testImgs)
             
+            for K in range(1, 51):
+                kNeighbours = knn.labels[np.argsort(neighboursList, axis=1)[:, :K]]
+                
+                folderName = "graphData/"
+                realFileName = folderName + "graph4_K" + str(K) + "_q" + str(qCurrent) + ".txt"
+                with open(realFileName, "a") as f:
+                    f.write(str(Get_shape_accuracy(kNeighbours, groundTruth)) + "\n" + str(execTime))
+                
+    
+    getDataGraph4(train_imgs, train_class_labels, test_imgs[0:500], test_class_labels[0:500])
