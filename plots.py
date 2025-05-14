@@ -296,8 +296,47 @@ def generateGraph3():
     meanList, stddevList, execTimeList, optionsList = gatherDataGraph3()
     plotMeanStdDevExecTime("test", meanList, stddevList, execTimeList, optionsList)
 
+def gatherDataGraph4(qAllowed = None):
+    directory = "./graphData/graph4"
+    fileList = listdir(directory)
+    resultsList = []
+    for fileName in fileList:
+        fileNameSplit = fileName[:-4].split("_")[1:]
+        K = int(fileNameSplit[0][1:])
+        q = float(fileNameSplit[1][1:])
+        readCond = (qAllowed == None)
+        if not readCond:
+            readCond = (q in qAllowed)
+        if readCond:
+            with open(directory + "/" + fileName, "r") as f:
+                lines = f.readlines()
+                lines = [float(i.replace("\n", "")) for i in lines]
+                resultsList.append([K, str("q=" + str(q)), lines[0], lines[1]])
+
+    KList = list(set([i[0] for i in resultsList]))
+    KList.sort()
+    
+    
+    optionsList = list(set([i[1] for i  in resultsList]))
+    optionsList.sort()
+    
+    accuracyLists = [[0 for _ in KList] for _ in optionsList]
+    execTimeLists = [[0 for _ in KList] for _ in optionsList]
+    
+    for el in resultsList:
+        accuracyLists[optionsList.index(el[1])][el[0] - 1] = el[2]
+        execTimeLists[optionsList.index(el[1])][el[0] - 1] = el[3]
+        
+    return KList, accuracyLists, execTimeLists, optionsList
+
+def generateGraph4(qAllowed = None):
+    KList, accuracyLists, execTimeLists, optionsList = gatherDataGraph4(qAllowed)
+    plotKNNAccuracyExecTime(KList, accuracyLists, execTimeLists, optionsList)
+    
+
 if __name__ == '__main__':
     # generateTestPlots()
     # generateGraph1()
     # generateGraph2()
-    generateGraph3()
+    # generateGraph3()
+    generateGraph4([0.5, 1, 1.2, 1.4, 1.6, 1.8, 2, 3, 4, 5])
