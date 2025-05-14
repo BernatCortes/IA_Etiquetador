@@ -58,7 +58,6 @@ def plotAccuracyExecTime(title, xData, xTitle, accuracyLists, execTimeLists, opt
     
     plt.show()
     
-
 def plotAccuracyExactExecTime(title, xData, xTitle, accuracyListsExact, accuracyLists, execTimeLists, optionsList = None, showDots = True):
     execTimeMinMax = listOfListsMinMax(execTimeLists)
     accuracyMinMax = listOfListsMinMax(accuracyLists)
@@ -116,6 +115,36 @@ def plotAccuracyExactExecTime(title, xData, xTitle, accuracyListsExact, accuracy
     
     plt.show()
 
+def plotMeanStdDevExecTime(title, meanList, stddevList, execTimeList, optionsList):
+    defaultColours = ["tab:blue", "tab:orange", "tab:green", "tab:red"]
+    
+    plt.figure(figsize=(20, 18))
+    
+    distanceFromOrigin = [np.sqrt((i * i) + (j * j)) for i, j in zip(meanList, stddevList)]
+    minIndex = distanceFromOrigin.index(min(distanceFromOrigin))
+    
+    optionTypes = list(set([i[:3] for i in optionsList]))
+    optionTypes.sort()
+    plotColours = [defaultColours[optionTypes.index(el[:3])] for el in optionsList]
+    
+    plt.subplot(211)
+    plt.title("Mitjana i desviació estàndar")
+    plt.scatter(meanList, stddevList, color = plotColours)
+    plt.scatter([meanList[minIndex]], [stddevList[minIndex]], color = [defaultColours[len(optionTypes)]])
+    for i in range(len(optionsList)):
+        plt.annotate(optionsList[i], (meanList[i], stddevList[i]))
+    plt.xlabel("Mitjana")
+    plt.ylabel("Desviació estàndar")
+    
+    plt.subplot(212)
+    plt.title("Temps d'execució")
+    plt.bar(optionsList, execTimeList, color = plotColours)
+    plt.xlabel("Opció")
+    plt.ylabel("Temps(s)")
+    plt.xticks(rotation=45)
+    
+    plt.show()
+
 
 def plotBestKAccuracyExecTime(KList, accuracyLists, execTimeLists, optionsList, title = "Exactitud i temps d'execució mig de KMeans"):
     xTitle = "K"
@@ -125,15 +154,22 @@ def plotBestKAccuracyExactExecTime(KList, accuracyListsExact, accuracyLists, exe
     xTitle = "K"
     plotAccuracyExactExecTime(title, KList, xTitle, accuracyListsExact, accuracyLists, execTimeLists, optionsList, showDots = False)
     
+    
 def plotFitToleranceAccuracyExecTime(toleranceList, accuracyLists, execTimeLists):
     title = "Exactitud i temps d'execució mig de KMeans"
     xTitle = "Tolerància a fit()"
     plotAccuracyExecTime(title, toleranceList, xTitle, accuracyLists, execTimeLists, None)
-    
+
+def plotFitToleranceAccuracyExactExecTime(KList, accuracyListsExact, accuracyLists, execTimeLists, optionsList, title = "Exactitud i temps d'execució mig de KMeans"):
+    xTitle = "tolerància"
+    plotAccuracyExactExecTime(title, KList, xTitle, accuracyListsExact, accuracyLists, execTimeLists, optionsList, showDots = False) 
+
+
 def plotBestKToleranceAccuracyExecTime(toleranceList, accuracyLists, execTimeLists, optionsList):
     title = "Exactitud de find_bestK"
     xTitle = "Tolerància a find_bestK"
     plotAccuracyExecTime(title, toleranceList, xTitle, accuracyLists, execTimeLists, optionsList)
+    
     
 def plotKNNAccuracyExecTime(KList, accuracyLists, execTimeLists, optionsList):
     title = "Exactitud de KNN"
@@ -141,7 +177,6 @@ def plotKNNAccuracyExecTime(KList, accuracyLists, execTimeLists, optionsList):
     plotAccuracyExecTime(title, KList, xTitle, accuracyLists, execTimeLists, optionsList, False)
     
     
-
 def generateTestPlots():
     plotBestKAccuracyExecTime([1, 2, 3, 4], [[0.8, 0.9, 0.95, 0.85], [0.83, 0.87, 0.92, 0.90]], [[1.05, 2.07, 4.21, 8.54], [1.23, 2.32, 3.47, 5.01]], ["first", "random"])
     plotFitToleranceAccuracyExecTime([0, 1, 2, 3], [[0.95, 0.95, 0.93, 0.92]], [[2.32, 2.02, 1.69, 1.23]])
@@ -186,10 +221,83 @@ def generateGraph1():
     KList, accuracyListsExact, accuracyLists, execTimeLists, optionsList = gatherDataGraph1()
     # plotBestKAccuracyExecTime(KList, accuracyListsExact, execTimeLists, optionsList, title = "Exactitud (exacte) i temps d'execució mig de KMeans")
     # plotBestKAccuracyExecTime(KList, accuracyLists, execTimeLists, optionsList, title = "Exactitud (aproximada) i temps d'execució mig de KMeans")
-    plotBestKAccuracyExactExecTime(KList, accuracyListsExact, accuracyLists, execTimeLists, optionsList, title = "Exactitud (exacta i aproximada) i temps d'execució mig de KMeans")
+    plotBestKAccuracyExactExecTime(KList, accuracyListsExact, accuracyLists, execTimeLists, optionsList)
     
+
+def gatherDataGraph2():
+    directory = "./graphData/graph2"
+    fileList = listdir(directory)
+    resultsList = []
+    for fileName in fileList:
+        fileNameSplit = fileName[:-4].split("_")[1:]
+        tolerances = int(fileNameSplit[-1][3:])
+        initCentroidsMethod = "_".join(fileNameSplit[:-1])
+        with open(directory + "/" + fileName, "r") as f:
+            lines = f.readlines()
+            lines = [float(i.replace("\n", "")) for i in lines]
+            resultsList.append([initCentroidsMethod, tolerances, lines[:-1], lines[-1]])
     
+    toleranceList = list(set([i[1] for i in resultsList]))
+    toleranceList.sort()
+    
+    optionsList = list(set([i[0] for i in resultsList]))
+    optionsList.sort()
+    
+    accuracyListsExact = [[0 for _ in toleranceList] for _ in optionsList]
+    accuracyLists = [[0 for _ in toleranceList] for _ in optionsList]
+    
+    execTimeLists = [[0 for _ in toleranceList] for _ in optionsList]
+    
+    for el in resultsList:
+        print(el)
+        accuracyListsExact[optionsList.index(el[0])][int(el[1] / 3)] = el[2][0]
+        accuracyLists[optionsList.index(el[0])][int(el[1] / 3)] = el[2][1]
+        execTimeLists[optionsList.index(el[0])][int(el[1] / 3)] = el[3]
+    
+    return toleranceList, accuracyListsExact, accuracyLists, execTimeLists, optionsList
+
+def generateGraph2():
+    toleranceList, accuracyListsExact, accuracyLists, execTimeLists, optionsList = gatherDataGraph2()
+    # plotBestKAccuracyExecTime(KList, accuracyListsExact, execTimeLists, optionsList, title = "Exactitud (exacte) i temps d'execució mig de KMeans")
+    # plotBestKAccuracyExecTime(KList, accuracyLists, execTimeLists, optionsList, title = "Exactitud (aproximada) i temps d'execució mig de KMeans")
+    plotFitToleranceAccuracyExactExecTime(toleranceList, accuracyListsExact, accuracyLists, execTimeLists, optionsList)
+ 
+
+
+def gatherDataGraph3():
+    directory = "./graphData/graph3"
+    fileList = listdir(directory)
+    resultsList = []
+    for fileName in fileList:
+        fileNameSplit = fileName[:-4].split("_")[1:]
+        tolerances = float(fileNameSplit[-1][3:])
+        discriminant = "_".join(fileNameSplit[:-1])
+        with open(directory + "/" + fileName, "r") as f:
+            lines = f.readlines()
+            lines = [float(i.replace("\n", "")) for i in lines]
+            resultsList.append([(discriminant + ", " + str(tolerances)), lines[:-1], lines[-1]])
+    
+    optionsList = list(set([i[0] for i in resultsList]))
+    optionsList.sort()
+    
+    meanList = [0 for _ in optionsList]
+    stddevList = [0 for _ in optionsList]
+    execTimeList = [0 for _ in optionsList]
+    
+    for el in resultsList:
+        i = optionsList.index(el[0])
+        meanList[i] = el[1][0]
+        stddevList[i] = el[1][1]
+        execTimeList[i] = el[2]
+    
+    return meanList, stddevList, execTimeList, optionsList
+
+def generateGraph3():
+    meanList, stddevList, execTimeList, optionsList = gatherDataGraph3()
+    plotMeanStdDevExecTime("test", meanList, stddevList, execTimeList, optionsList)
 
 if __name__ == '__main__':
     # generateTestPlots()
-    generateGraph1()
+    # generateGraph1()
+    # generateGraph2()
+    generateGraph3()
