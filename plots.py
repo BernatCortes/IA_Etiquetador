@@ -4,10 +4,11 @@ import math
 import numpy as np
 
 from mpl_toolkits.mplot3d import axes3d
+from os import listdir
 
 from utils_data import Plot3DCloud
 
-colours = ["blue", "green", "red", "cyan", "magenta", "yellow", "black"]
+colours = ["blue", "green", "red", "cyan", "magenta", "yellow", "black", "silver", "lime", "orange"]
 
 def listOfListsMinMax(listOfLists):
     minVal = listOfLists[0][0]
@@ -22,7 +23,7 @@ def plotAccuracyExecTime(title, xData, xTitle, accuracyLists, execTimeLists, opt
     execTimeMinMax = listOfListsMinMax(execTimeLists)
     accuracyMinMax = listOfListsMinMax(accuracyLists)
     
-    plt.figure()
+    plt.figure(figsize=(20, 12))
     
     plt.subplot(211)
     plt.title(title)
@@ -58,10 +59,71 @@ def plotAccuracyExecTime(title, xData, xTitle, accuracyLists, execTimeLists, opt
     plt.show()
     
 
-def plotBestKAccuracyExecTime(KList, accuracyLists, execTimeLists, optionsList):
-    title = "Exactitud i temps d'execució mig de KMeans"
+def plotAccuracyExactExecTime(title, xData, xTitle, accuracyListsExact, accuracyLists, execTimeLists, optionsList = None, showDots = True):
+    execTimeMinMax = listOfListsMinMax(execTimeLists)
+    accuracyMinMax = listOfListsMinMax(accuracyLists)
+    accuracyExactMinMax = listOfListsMinMax(accuracyListsExact)
+    
+    plt.figure(figsize=(20, 18))
+    
+    plt.subplot(311)
+    plt.title("Exactitud (Exact Match)")
+    i = 0
+    for accuracyList in accuracyListsExact:
+        if showDots:
+            plt.plot(xData, accuracyList, "o", c = colours[i])
+            plt.plot(xData, accuracyList, "k", label = '_nolegend_', c = colours[i])
+        else:
+            plt.plot(xData, accuracyList, "k", c = colours[i])
+        i = (i + 1) % len(colours)
+    plt.xticks(xData)
+    plt.ylim(math.floor(accuracyExactMinMax[0] * 10 - 1e-3) / 10, math.ceil(accuracyExactMinMax[1] * 10 + 1e-3) / 10)
+    plt.ylabel("Exactitud")
+    if optionsList != None:
+        plt.legend(optionsList)
+    
+    plt.subplot(312)
+    plt.title("Exactitud (Relative Match)")
+    i = 0
+    for accuracyList in accuracyLists:
+        if showDots:
+            plt.plot(xData, accuracyList, "o", c = colours[i])
+            plt.plot(xData, accuracyList, "k", label = '_nolegend_', c = colours[i])
+        else:
+            plt.plot(xData, accuracyList, "k", c = colours[i])
+        i = (i + 1) % len(colours)
+    plt.xticks(xData)
+    plt.ylim(math.floor(accuracyMinMax[0] * 10 - 1e-3) / 10, math.ceil(accuracyMinMax[1] * 10 + 1e-3) / 10)
+    plt.ylabel("Exactitud")
+    if optionsList != None:
+        plt.legend(optionsList)
+    
+    plt.subplot(313)
+    plt.title("Temps d'execució")
+    i = 0
+    for execTimeList in execTimeLists:
+        if showDots:
+            plt.plot(xData, execTimeList, "o", c = colours[i])
+            plt.plot(xData, execTimeList, "k", label = '_nolegend_', c = colours[i])
+        else:
+            plt.plot(xData, execTimeList, "k", c = colours[i])
+        i = (i + 1) % len(colours)
+    plt.xticks(xData)
+    plt.xlabel(xTitle)
+    plt.ylabel("Temps (s)")
+    if optionsList != None:
+        plt.legend(optionsList)
+    
+    plt.show()
+
+
+def plotBestKAccuracyExecTime(KList, accuracyLists, execTimeLists, optionsList, title = "Exactitud i temps d'execució mig de KMeans"):
     xTitle = "K"
     plotAccuracyExecTime(title, KList, xTitle, accuracyLists, execTimeLists, optionsList)
+
+def plotBestKAccuracyExactExecTime(KList, accuracyListsExact, accuracyLists, execTimeLists, optionsList, title = "Exactitud i temps d'execució mig de KMeans"):
+    xTitle = "K"
+    plotAccuracyExactExecTime(title, KList, xTitle, accuracyListsExact, accuracyLists, execTimeLists, optionsList, showDots = False)
     
 def plotFitToleranceAccuracyExecTime(toleranceList, accuracyLists, execTimeLists):
     title = "Exactitud i temps d'execució mig de KMeans"
@@ -89,5 +151,45 @@ def generateTestPlots():
     plotKNNAccuracyExecTime([1, 2, 3, 4, 5, 6], [KNNTestList1, [0.85 * i for i in KNNTestList1], [0.88 * i for i in KNNTestList1], [0.9 * i for i in KNNTestList1], [0.95 * i for i in KNNTestList1], [0.92 * i for i in KNNTestList1]], [KNNTestList2, [0.7 * i for i in KNNTestList2], [1.2 * i for i in KNNTestList2], [0.3 * i for i in KNNTestList2], [1.5 * i for i in KNNTestList2], [1.6 * i for i in KNNTestList2]], ["q=0.5", "q=1", "q=1.5", "q=2", "q=2.5", "q=3"])
 
 
+def gatherDataGraph1():
+    directory = "./graphData/graph1"
+    fileList = listdir(directory)
+    resultsList = []
+    for fileName in fileList:
+        fileNameSplit = fileName[:-4].split("_")[1:]
+        K = int(fileNameSplit[-1][1:])
+        initCentroidsMethod = "_".join(fileNameSplit[:-1])
+        with open(directory + "/" + fileName, "r") as f:
+            lines = f.readlines()
+            lines = [float(i.replace("\n", "")) for i in lines]
+            resultsList.append([initCentroidsMethod, K, lines[:-1], lines[-1]])
+    
+    KList = list(set([i[1] for i in resultsList]))
+    KList.sort()
+    
+    optionsList = list(set([i[0] for i in resultsList]))
+    optionsList.sort()
+    
+    accuracyListsExact = [[0 for _ in KList] for _ in optionsList]
+    accuracyLists = [[0 for _ in KList] for _ in optionsList]
+    
+    execTimeLists = [[0 for _ in KList] for _ in optionsList]
+    
+    for el in resultsList:
+        accuracyListsExact[optionsList.index(el[0])][el[1] - 1] = el[2][0]
+        accuracyLists[optionsList.index(el[0])][el[1] - 1] = el[2][1]
+        execTimeLists[optionsList.index(el[0])][el[1] - 1] = el[3]
+    
+    return KList, accuracyListsExact, accuracyLists, execTimeLists, optionsList
+
+def generateGraph1():
+    KList, accuracyListsExact, accuracyLists, execTimeLists, optionsList = gatherDataGraph1()
+    # plotBestKAccuracyExecTime(KList, accuracyListsExact, execTimeLists, optionsList, title = "Exactitud (exacte) i temps d'execució mig de KMeans")
+    # plotBestKAccuracyExecTime(KList, accuracyLists, execTimeLists, optionsList, title = "Exactitud (aproximada) i temps d'execució mig de KMeans")
+    plotBestKAccuracyExactExecTime(KList, accuracyListsExact, accuracyLists, execTimeLists, optionsList, title = "Exactitud (exacta i aproximada) i temps d'execució mig de KMeans")
+    
+    
+
 if __name__ == '__main__':
-    generateTestPlots()
+    # generateTestPlots()
+    generateGraph1()
