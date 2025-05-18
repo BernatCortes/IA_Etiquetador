@@ -1,5 +1,5 @@
-__authors__ = 'TO_BE_FILLED'
-__group__ = 'TO_BE_FILLED'
+__authors__ = '[1672633, 1673893, 1673377]'
+__group__ = '33'
 
 from utils_data import read_dataset, read_extended_dataset, crop_images, Plot3DCloud
 from utils import get_color_prob, colors
@@ -14,7 +14,7 @@ import numpy as np
 
 from collections import Counter
 
-from CollectedData import *
+# from CollectedData import *
 
 if __name__ == '__main__':
 
